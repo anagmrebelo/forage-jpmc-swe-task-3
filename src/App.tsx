@@ -1,17 +1,25 @@
-import React, { Component } from 'react';
-import DataStreamer, { ServerRespond } from './DataStreamer';
-import Graph from './Graph';
-import './App.css';
+import React, { Component } from "react";
+import {
+  DataStreamer,
+  ServerRespond,
+  ThresholdStreamer,
+  Thresholds,
+} from "./Streamers";
+import Graph from "./Graph";
+import "./App.css";
+import { ServerResponse } from "http";
 
 interface IState {
-  data: ServerRespond[],
-  showGraph: boolean,
+  data: ServerRespond[];
+  showGraph: boolean;
+  thresholds: Thresholds;
 }
 
 class App extends Component<{}, IState> {
   constructor(props: {}) {
     super(props);
     this.state = {
+      thresholds: { up_threshold: 0, low_threshold: 0 },
       data: [],
       showGraph: false,
     };
@@ -19,18 +27,36 @@ class App extends Component<{}, IState> {
 
   renderGraph() {
     if (this.state.showGraph) {
-      return (<Graph data={this.state.data}/>)
+      return (
+        <Graph data={this.state.data} thresholds={this.state.thresholds} />
+      );
     }
   }
 
+  getThresholdsFromServer() {
+    ThresholdStreamer.getData((response: Thresholds) => {
+      this.setState((prevState) => ({
+        data: prevState.data,
+        showGraph: prevState.showGraph,
+        thresholds: {
+          up_threshold: response.up_threshold,
+          low_threshold: response.low_threshold,
+        },
+      }));
+    });
+  }
+
   getDataFromServer() {
+    this.getThresholdsFromServer();
+
     let x = 0;
     const interval = setInterval(() => {
       DataStreamer.getData((serverResponds: ServerRespond[]) => {
-        this.setState({
+        this.setState((prevState) => ({
+          thresholds: prevState.thresholds,
           data: serverResponds,
           showGraph: true,
-        });
+        }));
       });
       x++;
       if (x > 1000) {
@@ -42,17 +68,20 @@ class App extends Component<{}, IState> {
   render() {
     return (
       <div className="App">
-        <header className="App-header">
-          Bank Merge & Co Task 3
-        </header>
+        <header className="App-header">Bank Merge & Co Task 3</header>
         <div className="App-content">
-          <button className="btn btn-primary Stream-button" onClick={() => {this.getDataFromServer()}}>Start Streaming Data</button>
-          <div className="Graph">
-            {this.renderGraph()}
-          </div>
+          <button
+            className="btn btn-primary Stream-button"
+            onClick={() => {
+              this.getDataFromServer();
+            }}
+          >
+            Start Streaming Data
+          </button>
+          <div className="Graph">{this.renderGraph()}</div>
         </div>
       </div>
-    )
+    );
   }
 }
 

@@ -309,6 +309,12 @@ class App(object):
             }
         }]
 
+
+    @route('/thresholds')
+    def handle_thresholds(self, x):
+		# Could query db or books to get +/-10% of the 12 month historical average ratio
+        return {"up_threshold": 1.1, "low_threshold": 0.99}
+
 ################################################################################
 #
 # Main
